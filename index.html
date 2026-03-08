@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Classroom ambient noise meter with local-only microphone analysis." />
+  <title>Classroom Noise Meter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Classroom Noise Meter</h1>
+    <p class="privacy-badge" aria-label="Privacy notice">
+      Analysis happens locally. No audio is recorded or sent anywhere.
+    </p>
+  </header>
+
+  <main class="app-main" aria-describedby="privacy-note">
+    <section class="card meter-card" aria-labelledby="meter-heading">
+      <h2 id="meter-heading">Live Noise Meter</h2>
+
+      <div
+        id="meterBar"
+        class="meter"
+        role="progressbar"
+        aria-label="Live noise level"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div id="meterFill" class="meter-fill quiet" style="width: 0%;"></div>
+      </div>
+
+      <p class="meter-value-wrap">
+        Current loudness:
+        <strong id="meterValue" aria-live="polite">0%</strong>
+      </p>
+
+      <p id="privacy-note" class="notice">
+        Analysis happens locally. No audio is recorded or sent anywhere.
+      </p>
+
+      <p id="presenterHint" class="helper presenter-hint" hidden aria-live="polite">
+        Presenter mode is on. Press P or Esc to exit.
+      </p>
+
+      <div class="presenter-exit-wrap">
+        <button id="exitPresenter" class="btn presenter-exit" type="button" hidden>
+          Exit Presenter Mode
+        </button>
+      </div>
+    </section>
+
+    <section class="card controls-card" aria-labelledby="controls-heading">
+      <h2 id="controls-heading">Controls</h2>
+
+      <div class="control-row">
+        <button id="micToggle" class="btn primary" type="button" aria-pressed="false">
+          Start Microphone
+        </button>
+        <button id="calibrateButton" class="btn" type="button">
+          Calibrate (2.5s)
+        </button>
+      </div>
+
+      <p id="calibrateStatus" class="helper" aria-live="polite">Not calibrated this session.</p>
+
+      <div class="toggle-wrap presenter-toggle-wrap">
+        <input id="presenterToggle" type="checkbox" />
+        <label for="presenterToggle">Presenter mode (meter + tally only)</label>
+      </div>
+
+      <div class="control-group">
+        <label for="thresholdSlider">Threshold</label>
+        <div class="range-wrap">
+          <input id="thresholdSlider" type="range" min="0" max="100" step="1" />
+          <output id="thresholdValue" for="thresholdSlider">60</output>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="sensitivitySlider">Sensitivity</label>
+        <div class="range-wrap">
+          <input id="sensitivitySlider" type="range" min="50" max="300" step="5" />
+          <output id="sensitivityValue" for="sensitivitySlider">100%</output>
+        </div>
+      </div>
+
+      <fieldset class="reinforcement-group">
+        <legend>Positive Reinforcement</legend>
+
+        <div class="toggle-wrap">
+          <input id="reinforcementToggle" type="checkbox" />
+          <label for="reinforcementToggle">Enable quiet-time deduction</label>
+        </div>
+
+        <div class="control-group compact">
+          <label for="quietStreakInput">Quiet streak before deduction (seconds)</label>
+          <input
+            id="quietStreakInput"
+            type="number"
+            min="10"
+            max="300"
+            step="5"
+            inputmode="numeric"
+          />
+        </div>
+
+        <p class="helper">When enabled: after the quiet streak is reached, 1 second is deducted every 5 quiet seconds.</p>
+      </fieldset>
+
+      <p id="statusMessage" class="status info" role="alert" aria-live="assertive">
+        Click “Start Microphone” to begin live analysis.
+      </p>
+    </section>
+
+    <section class="card tally-card" aria-labelledby="tally-heading">
+      <h2 id="tally-heading">Detention Tally</h2>
+
+      <p class="tally-value" aria-live="polite" aria-atomic="true">
+        Session total: <strong id="tallyValue">00:00</strong>
+      </p>
+
+      <div class="control-row">
+        <button id="resetTally" class="btn" type="button">Reset</button>
+        <button id="exportCsv" class="btn" type="button">Export Session CSV</button>
+      </div>
+
+      <p class="helper">CSV includes only timestamp + session total (no audio data).</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Local processing only · Version 1.0.0</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

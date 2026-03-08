@@ -1,0 +1,297 @@
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --panel-border: #334155;
+  --text: #f8fafc;
+  --muted: #cbd5e1;
+
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+
+  --focus: #22d3ee;
+  --button: #1e293b;
+  --button-hover: #334155;
+  --primary: #0ea5e9;
+  --primary-hover: #0284c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.4;
+}
+
+.app-header,
+.app-footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 2vw, 2rem);
+}
+
+.privacy-badge {
+  margin: 0;
+  display: inline-block;
+  background: #052e16;
+  color: #dcfce7;
+  border: 1px solid #16a34a;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.app-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem 1.5rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 0.85rem;
+  padding: 1rem;
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+.meter {
+  width: 100%;
+  height: 2.3rem;
+  border-radius: 999px;
+  background: #1f2937;
+  border: 1px solid #475569;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  width: 0;
+  transition: width 70ms linear, background-color 120ms ease;
+}
+
+.meter-fill.quiet {
+  background: var(--green);
+}
+
+.meter-fill.near {
+  background: var(--amber);
+}
+
+.meter-fill.loud {
+  background: var(--red);
+}
+
+.meter-value-wrap {
+  font-size: 1.15rem;
+  margin: 0.8rem 0 0;
+}
+
+.notice,
+.helper {
+  color: var(--muted);
+  margin: 0.6rem 0 0;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.control-group {
+  margin-top: 0.9rem;
+}
+
+.control-group.compact input[type="number"] {
+  margin-top: 0.35rem;
+  width: 8rem;
+}
+
+label,
+legend {
+  font-weight: 600;
+}
+
+.range-wrap {
+  margin-top: 0.35rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+output {
+  min-width: 3.2rem;
+  text-align: right;
+  font-weight: 700;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+.reinforcement-group {
+  margin-top: 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+}
+
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.presenter-toggle-wrap {
+  margin-top: 0.9rem;
+}
+
+.btn {
+  border: 1px solid #64748b;
+  border-radius: 0.55rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--button);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--button-hover);
+}
+
+.btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #f8fafc;
+}
+
+.btn.primary:hover {
+  background: var(--primary-hover);
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.status {
+  margin: 1rem 0 0;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid transparent;
+}
+
+.status.info {
+  color: #bfdbfe;
+  background: #172554;
+  border-color: #1d4ed8;
+}
+
+.status.warn {
+  color: #fef3c7;
+  background: #451a03;
+  border-color: #d97706;
+}
+
+.status.error {
+  color: #fee2e2;
+  background: #450a0a;
+  border-color: #dc2626;
+}
+
+.tally-value {
+  margin: 0.4rem 0 1rem;
+  font-size: 1.35rem;
+}
+
+.app-footer {
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 1.5rem;
+}
+
+.presenter-hint {
+  display: none;
+}
+
+.presenter-exit-wrap {
+  margin-top: 0.9rem;
+  text-align: center;
+}
+
+.presenter-exit {
+  display: none;
+}
+
+body.presenter-mode .app-header,
+body.presenter-mode .app-footer,
+body.presenter-mode .controls-card,
+body.presenter-mode .meter-card .notice {
+  display: none;
+}
+
+body.presenter-mode .presenter-hint {
+  display: block;
+  text-align: center;
+}
+
+body.presenter-mode .presenter-exit {
+  display: inline-block;
+}
+
+body.presenter-mode .app-main {
+  max-width: 900px;
+  grid-template-columns: 1fr;
+  padding-top: 1.2rem;
+}
+
+body.presenter-mode .meter {
+  height: 4rem;
+}
+
+body.presenter-mode .meter-value-wrap {
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  text-align: center;
+}
+
+body.presenter-mode .tally-value {
+  font-size: clamp(2rem, 6vw, 3rem);
+  text-align: center;
+}
+
+body.presenter-mode .tally-card .control-row,
+body.presenter-mode .tally-card .helper {
+  display: none;
+}
+
+@media (min-width: 860px) {
+  .app-main {
+    grid-template-columns: 1.35fr 1fr;
+  }
+
+  .meter-card {
+    grid-column: 1 / -1;
+  }
+}
