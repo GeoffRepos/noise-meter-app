@@ -14,12 +14,44 @@ const DEFAULT_SETTINGS = {
   sensitivity: 100,
   reinforcementEnabled: false,
   quietStreakSeconds: 30,
+  creepArmSeconds: 4,
+  productivityFillSeconds: 150,
+  productivityDrainSeconds: 70,
+  selectedPreset: "balanced",
   presenterMode: false
+};
+
+const PRESETS = {
+  strict: {
+    threshold: 52,
+    sensitivity: 120,
+    creepArmSeconds: 2.5,
+    productivityFillSeconds: 220,
+    productivityDrainSeconds: 45
+  },
+  balanced: {
+    threshold: 60,
+    sensitivity: 100,
+    creepArmSeconds: 4,
+    productivityFillSeconds: 150,
+    productivityDrainSeconds: 70
+  },
+  forgiving: {
+    threshold: 70,
+    sensitivity: 85,
+    creepArmSeconds: 6.5,
+    productivityFillSeconds: 110,
+    productivityDrainSeconds: 120
+  }
 };
 
 // Reinforcement cadence: once quiet streak is achieved,
 // subtract 1 second from tally every 5 seconds of continued quiet.
 const DEDUCT_EVERY_SECONDS = 5;
+const CREEP_NEAR_RATE_RATIO = 0.32;
+const CREEP_DECAY_SLOW_RATIO = 0.6;
+const CREEP_DECAY_FAST_RATIO = 1.4;
+const PRODUCTIVITY_NEAR_FILL_RATIO = 0.58;
 
 const ui = {
   micToggle: document.getElementById("micToggle"),
@@ -32,12 +64,28 @@ const ui = {
   thresholdValue: document.getElementById("thresholdValue"),
   sensitivitySlider: document.getElementById("sensitivitySlider"),
   sensitivityValue: document.getElementById("sensitivityValue"),
+  creepArmSlider: document.getElementById("creepArmSlider"),
+  creepArmValue: document.getElementById("creepArmValue"),
+  productivityFillSlider: document.getElementById("productivityFillSlider"),
+  productivityFillValue: document.getElementById("productivityFillValue"),
+  productivityDrainSlider: document.getElementById("productivityDrainSlider"),
+  productivityDrainValue: document.getElementById("productivityDrainValue"),
+  presetStrict: document.getElementById("presetStrict"),
+  presetBalanced: document.getElementById("presetBalanced"),
+  presetForgiving: document.getElementById("presetForgiving"),
+  presetValue: document.getElementById("presetValue"),
   reinforcementToggle: document.getElementById("reinforcementToggle"),
   quietStreakInput: document.getElementById("quietStreakInput"),
   meterBar: document.getElementById("meterBar"),
   meterFill: document.getElementById("meterFill"),
   meterValue: document.getElementById("meterValue"),
+  creepBar: document.getElementById("creepBar"),
+  creepFill: document.getElementById("creepFill"),
+  creepStatus: document.getElementById("creepStatus"),
   tallyValue: document.getElementById("tallyValue"),
+  productivityBar: document.getElementById("productivityBar"),
+  productivityFill: document.getElementById("productivityFill"),
+  productivityValue: document.getElementById("productivityValue"),
   resetTally: document.getElementById("resetTally"),
   exportCsv: document.getElementById("exportCsv"),
   statusMessage: document.getElementById("statusMessage")
@@ -56,6 +104,8 @@ const state = {
   smoothedLoudness: 0,
   tallySeconds: 0,
   aboveAccumulator: 0,
+  creepPercent: 0,
+  productivityPercent: 0,
   quietSeconds: 0,
   quietDeductAccumulator: 0,
 
@@ -63,6 +113,45 @@ const state = {
   calibrationSamples: [],
   calibrationEndTimeMs: 0
 };
+
+let currentPreset = DEFAULT_SETTINGS.selectedPreset;
+
+function normalizePresetName(value) {
+  if (value === "strict" || value === "balanced" || value === "forgiving" || value === "custom") {
+    return value;
+  }
+
+  return DEFAULT_SETTINGS.selectedPreset;
+}
+
+function formatPresetLabel(value) {
+  switch (value) {
+    case "strict":
+      return "Strict";
+    case "balanced":
+      return "Balanced";
+    case "forgiving":
+      return "Forgiving";
+    default:
+      return "Custom";
+  }
+}
+
+function updatePresetUI() {
+  ui.presetStrict.classList.toggle("active", currentPreset === "strict");
+  ui.presetBalanced.classList.toggle("active", currentPreset === "balanced");
+  ui.presetForgiving.classList.toggle("active", currentPreset === "forgiving");
+  ui.presetValue.textContent = formatPresetLabel(currentPreset);
+}
+
+function markPresetCustom() {
+  if (currentPreset === "custom") {
+    return;
+  }
+
+  currentPreset = "custom";
+  updatePresetUI();
+}
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -93,6 +182,10 @@ function loadSettings() {
       sensitivity: clamp(Number(parsed.sensitivity) || DEFAULT_SETTINGS.sensitivity, 50, 300),
       reinforcementEnabled: Boolean(parsed.reinforcementEnabled),
       quietStreakSeconds: clamp(Number(parsed.quietStreakSeconds) || DEFAULT_SETTINGS.quietStreakSeconds, 10, 300),
+      creepArmSeconds: clamp(Number(parsed.creepArmSeconds) || DEFAULT_SETTINGS.creepArmSeconds, 2, 12),
+      productivityFillSeconds: clamp(Number(parsed.productivityFillSeconds) || DEFAULT_SETTINGS.productivityFillSeconds, 60, 600),
+      productivityDrainSeconds: clamp(Number(parsed.productivityDrainSeconds) || DEFAULT_SETTINGS.productivityDrainSeconds, 30, 300),
+      selectedPreset: normalizePresetName(parsed.selectedPreset),
       presenterMode: Boolean(parsed.presenterMode)
     };
   } catch {
@@ -107,6 +200,10 @@ function saveSettings() {
     sensitivity: Number(ui.sensitivitySlider.value),
     reinforcementEnabled: ui.reinforcementToggle.checked,
     quietStreakSeconds: clamp(Number(ui.quietStreakInput.value) || 30, 10, 300),
+    creepArmSeconds: clamp(Number(ui.creepArmSlider.value) || DEFAULT_SETTINGS.creepArmSeconds, 2, 12),
+    productivityFillSeconds: clamp(Number(ui.productivityFillSlider.value) || DEFAULT_SETTINGS.productivityFillSeconds, 60, 600),
+    productivityDrainSeconds: clamp(Number(ui.productivityDrainSlider.value) || DEFAULT_SETTINGS.productivityDrainSeconds, 30, 300),
+    selectedPreset: currentPreset,
     presenterMode: ui.presenterToggle.checked
   };
 
@@ -119,8 +216,12 @@ function saveSettings() {
 }
 
 function applySettingsToUI(settings) {
+  currentPreset = normalizePresetName(settings.selectedPreset);
   ui.thresholdSlider.value = String(settings.threshold);
   ui.sensitivitySlider.value = String(settings.sensitivity);
+  ui.creepArmSlider.value = String(settings.creepArmSeconds);
+  ui.productivityFillSlider.value = String(settings.productivityFillSeconds);
+  ui.productivityDrainSlider.value = String(settings.productivityDrainSeconds);
   ui.reinforcementToggle.checked = settings.reinforcementEnabled;
   ui.quietStreakInput.value = String(settings.quietStreakSeconds);
   ui.presenterToggle.checked = settings.presenterMode;
@@ -128,6 +229,40 @@ function applySettingsToUI(settings) {
 
   ui.thresholdValue.textContent = String(settings.threshold);
   ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+  renderTeacherTuningValues();
+  updatePresetUI();
+}
+
+function applyPreset(presetName) {
+  const safeName = normalizePresetName(presetName);
+  const preset = PRESETS[safeName];
+  if (!preset) {
+    return;
+  }
+
+  currentPreset = safeName;
+  ui.thresholdSlider.value = String(preset.threshold);
+  ui.sensitivitySlider.value = String(preset.sensitivity);
+  ui.creepArmSlider.value = String(preset.creepArmSeconds);
+  ui.productivityFillSlider.value = String(preset.productivityFillSeconds);
+  ui.productivityDrainSlider.value = String(preset.productivityDrainSeconds);
+
+  ui.thresholdValue.textContent = String(preset.threshold);
+  ui.sensitivityValue.textContent = `${preset.sensitivity}%`;
+  renderTeacherTuningValues();
+  updatePresetUI();
+  saveSettings();
+  setStatus(`${formatPresetLabel(safeName)} preset applied.`, "info");
+}
+
+function renderTeacherTuningValues() {
+  const creepArmSeconds = clamp(Number(ui.creepArmSlider.value) || DEFAULT_SETTINGS.creepArmSeconds, 2, 12);
+  const productivityFillSeconds = clamp(Number(ui.productivityFillSlider.value) || DEFAULT_SETTINGS.productivityFillSeconds, 60, 600);
+  const productivityDrainSeconds = clamp(Number(ui.productivityDrainSlider.value) || DEFAULT_SETTINGS.productivityDrainSeconds, 30, 300);
+
+  ui.creepArmValue.textContent = `${creepArmSeconds.toFixed(1)}s`;
+  ui.productivityFillValue.textContent = `${Math.round(productivityFillSeconds)}s`;
+  ui.productivityDrainValue.textContent = `${Math.round(productivityDrainSeconds)}s`;
 }
 
 function setPresenterMode(enabled, save = true) {
@@ -165,18 +300,117 @@ function renderMeter(loudnessPercent) {
   }
 }
 
+function renderSlowCreep(creepPercent) {
+  const rounded = Math.round(clamp(creepPercent, 0, 100));
+  ui.creepFill.style.width = `${rounded}%`;
+  ui.creepBar.setAttribute("aria-valuenow", String(rounded));
+
+  if (rounded >= 100) {
+    ui.creepFill.className = "sub-meter-fill loud";
+    ui.creepStatus.textContent = "Detention imminent";
+    return;
+  }
+
+  if (rounded >= 60) {
+    ui.creepFill.className = "sub-meter-fill near";
+    ui.creepStatus.textContent = "Warning";
+    return;
+  }
+
+  if (rounded >= 20) {
+    ui.creepFill.className = "sub-meter-fill quiet";
+    ui.creepStatus.textContent = "Caution";
+    return;
+  }
+
+  ui.creepFill.className = "sub-meter-fill quiet";
+  ui.creepStatus.textContent = "Good";
+}
+
+function renderProductivity(productivityPercent) {
+  const rounded = Math.round(clamp(productivityPercent, 0, 100));
+  ui.productivityFill.style.width = `${rounded}%`;
+  ui.productivityValue.textContent = `${rounded}%`;
+  ui.productivityBar.setAttribute("aria-valuenow", String(rounded));
+
+  if (rounded >= 70) {
+    ui.productivityFill.className = "sub-meter-fill quiet";
+  } else if (rounded >= 35) {
+    ui.productivityFill.className = "sub-meter-fill near";
+  } else {
+    ui.productivityFill.className = "sub-meter-fill loud";
+  }
+}
+
+function updateSlowCreepDetector(currentLoudness, deltaSeconds) {
+  const threshold = Number(ui.thresholdSlider.value);
+  const creepArmSeconds = clamp(Number(ui.creepArmSlider.value) || DEFAULT_SETTINGS.creepArmSeconds, 2, 12);
+  const nearThreshold = threshold * 0.8;
+  const settleThreshold = threshold * 0.6;
+  const fillPerSecond = 100 / creepArmSeconds;
+  const nearFillPerSecond = fillPerSecond * CREEP_NEAR_RATE_RATIO;
+  const decaySlowPerSecond = fillPerSecond * CREEP_DECAY_SLOW_RATIO;
+  const decayFastPerSecond = fillPerSecond * CREEP_DECAY_FAST_RATIO;
+
+  if (currentLoudness > threshold) {
+    state.creepPercent += deltaSeconds * fillPerSecond;
+  } else if (currentLoudness >= nearThreshold) {
+    state.creepPercent += deltaSeconds * nearFillPerSecond;
+  } else if (currentLoudness >= settleThreshold) {
+    state.creepPercent -= deltaSeconds * decaySlowPerSecond;
+  } else {
+    state.creepPercent -= deltaSeconds * decayFastPerSecond;
+  }
+
+  state.creepPercent = clamp(state.creepPercent, 0, 100);
+  renderSlowCreep(state.creepPercent);
+  return state.creepPercent >= 100;
+}
+
+function updateProductivityProgress(currentLoudness, deltaSeconds) {
+  const threshold = Number(ui.thresholdSlider.value);
+  const productivityFillSeconds = clamp(Number(ui.productivityFillSlider.value) || DEFAULT_SETTINGS.productivityFillSeconds, 60, 600);
+  const productivityDrainSeconds = clamp(Number(ui.productivityDrainSlider.value) || DEFAULT_SETTINGS.productivityDrainSeconds, 30, 300);
+  const nearThreshold = threshold * 0.8;
+  const fillPerSecond = 100 / productivityFillSeconds;
+  const nearFillPerSecond = fillPerSecond * PRODUCTIVITY_NEAR_FILL_RATIO;
+  const drainPerSecond = 100 / productivityDrainSeconds;
+
+  if (currentLoudness <= nearThreshold) {
+    state.productivityPercent += deltaSeconds * fillPerSecond;
+  } else if (currentLoudness <= threshold) {
+    state.productivityPercent += deltaSeconds * nearFillPerSecond;
+  } else {
+    state.productivityPercent -= deltaSeconds * drainPerSecond;
+  }
+
+  state.productivityPercent = clamp(state.productivityPercent, 0, 100);
+  renderProductivity(state.productivityPercent);
+}
+
 function resetRunningAccumulators() {
   state.aboveAccumulator = 0;
+  state.creepPercent = 0;
   state.quietSeconds = 0;
   state.quietDeductAccumulator = 0;
+  renderSlowCreep(0);
 }
 
 function handleTallyLogic(currentLoudness, deltaSeconds) {
   const threshold = Number(ui.thresholdSlider.value);
   const reinforcementEnabled = ui.reinforcementToggle.checked;
   const quietStreak = clamp(Number(ui.quietStreakInput.value) || 30, 10, 300);
+  const creepArmed = updateSlowCreepDetector(currentLoudness, deltaSeconds);
+  updateProductivityProgress(currentLoudness, deltaSeconds);
 
   if (currentLoudness > threshold) {
+    if (!creepArmed) {
+      state.aboveAccumulator = 0;
+      state.quietSeconds = 0;
+      state.quietDeductAccumulator = 0;
+      return;
+    }
+
     // Add tally at real time: +1 second for each full second above threshold.
     state.aboveAccumulator += deltaSeconds;
 
@@ -391,6 +625,8 @@ async function stopMicrophone() {
   ui.micToggle.textContent = "Start Microphone";
   ui.micToggle.setAttribute("aria-pressed", "false");
   renderMeter(0);
+  state.creepPercent = 0;
+  renderSlowCreep(0);
 }
 
 async function toggleMicrophone() {
@@ -444,8 +680,10 @@ function finishCalibration() {
 
 function resetTally() {
   state.tallySeconds = 0;
+  state.productivityPercent = 0;
   resetRunningAccumulators();
   renderTally();
+  renderProductivity(0);
 }
 
 function exportSessionCsv() {
@@ -471,12 +709,44 @@ function setupEventListeners() {
 
   ui.thresholdSlider.addEventListener("input", () => {
     ui.thresholdValue.textContent = ui.thresholdSlider.value;
+    markPresetCustom();
     saveSettings();
   });
 
   ui.sensitivitySlider.addEventListener("input", () => {
     ui.sensitivityValue.textContent = `${ui.sensitivitySlider.value}%`;
+    markPresetCustom();
     saveSettings();
+  });
+
+  ui.creepArmSlider.addEventListener("input", () => {
+    markPresetCustom();
+    renderTeacherTuningValues();
+    saveSettings();
+  });
+
+  ui.productivityFillSlider.addEventListener("input", () => {
+    markPresetCustom();
+    renderTeacherTuningValues();
+    saveSettings();
+  });
+
+  ui.productivityDrainSlider.addEventListener("input", () => {
+    markPresetCustom();
+    renderTeacherTuningValues();
+    saveSettings();
+  });
+
+  ui.presetStrict.addEventListener("click", () => {
+    applyPreset("strict");
+  });
+
+  ui.presetBalanced.addEventListener("click", () => {
+    applyPreset("balanced");
+  });
+
+  ui.presetForgiving.addEventListener("click", () => {
+    applyPreset("forgiving");
   });
 
   ui.reinforcementToggle.addEventListener("change", () => {
@@ -527,6 +797,8 @@ function init() {
   applySettingsToUI(settings);
   setPresenterMode(settings.presenterMode, false);
   renderMeter(0);
+  renderSlowCreep(0);
+  renderProductivity(0);
   renderTally();
   setupEventListeners();
 }

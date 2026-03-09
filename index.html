@@ -17,24 +17,50 @@
 
   <main class="app-main" aria-describedby="privacy-note">
     <section class="card meter-card" aria-labelledby="meter-heading">
-      <h2 id="meter-heading">Live Noise Meter</h2>
+      <h2 id="meter-heading">
+        <span class="normal-title">Noise Detector</span>
+        <span class="presenter-title">
+          <span class="presenter-title-main">Class Progress Meter</span>
+          <span class="presenter-title-sub">Quiet Effort -&gt; Big Results</span>
+        </span>
+      </h2>
 
-      <div
-        id="meterBar"
-        class="meter"
-        role="progressbar"
-        aria-label="Live noise level"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-      >
-        <div id="meterFill" class="meter-fill quiet" style="width: 0%;"></div>
+      <div class="slow-creep-wrap" aria-labelledby="creepHeading">
+        <h3 id="creepHeading">Noise Detector</h3>
+        <div
+          id="creepBar"
+          class="sub-meter"
+          role="progressbar"
+          aria-label="Noise detector escalation level"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="creepFill" class="sub-meter-fill quiet" style="width: 0%;"></div>
+        </div>
+        <p class="sub-meter-value">Status: <strong id="creepStatus" aria-live="polite">Good</strong></p>
+        <p class="helper range-info">Range: Good to Detention imminent. Detention time starts only when this reaches full.</p>
       </div>
 
-      <p class="meter-value-wrap">
-        Current loudness:
-        <strong id="meterValue" aria-live="polite">0%</strong>
-      </p>
+      <div class="live-noise-wrap" aria-labelledby="liveNoiseHeading">
+        <h3 id="liveNoiseHeading">Live Noise Meter</h3>
+        <div
+          id="meterBar"
+          class="meter"
+          role="progressbar"
+          aria-label="Live noise level"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="meterFill" class="meter-fill quiet" style="width: 0%;"></div>
+        </div>
+
+        <p class="meter-value-wrap">
+          Current loudness:
+          <strong id="meterValue" aria-live="polite">0%</strong>
+        </p>
+      </div>
 
       <p id="privacy-note" class="notice">
         Analysis happens locally. No audio is recorded or sent anywhere.
@@ -86,6 +112,43 @@
         </div>
       </div>
 
+      <fieldset class="reinforcement-group teacher-tuning-group">
+        <legend>Teacher Tuning</legend>
+
+        <div class="preset-row" role="group" aria-label="Teacher tuning presets">
+          <button id="presetStrict" class="btn" type="button">Strict</button>
+          <button id="presetBalanced" class="btn" type="button">Balanced</button>
+          <button id="presetForgiving" class="btn" type="button">Forgiving</button>
+        </div>
+        <p class="helper">Current preset: <strong id="presetValue">Balanced</strong></p>
+
+        <div class="control-group">
+          <label for="creepArmSlider">Slow creep grace time (seconds)</label>
+          <div class="range-wrap">
+            <input id="creepArmSlider" type="range" min="2" max="12" step="0.5" />
+            <output id="creepArmValue" for="creepArmSlider">4.0s</output>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="productivityFillSlider">Productivity fill time to 100% (seconds)</label>
+          <div class="range-wrap">
+            <input id="productivityFillSlider" type="range" min="60" max="600" step="10" />
+            <output id="productivityFillValue" for="productivityFillSlider">150s</output>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="productivityDrainSlider">Productivity drain time to 0% (seconds)</label>
+          <div class="range-wrap">
+            <input id="productivityDrainSlider" type="range" min="30" max="300" step="5" />
+            <output id="productivityDrainValue" for="productivityDrainSlider">70s</output>
+          </div>
+        </div>
+
+        <p class="helper">Use these sliders to make class feedback more strict or more forgiving.</p>
+      </fieldset>
+
       <fieldset class="reinforcement-group">
         <legend>Positive Reinforcement</legend>
 
@@ -124,6 +187,22 @@
       <div class="control-row">
         <button id="resetTally" class="btn" type="button">Reset</button>
         <button id="exportCsv" class="btn" type="button">Export Session CSV</button>
+      </div>
+
+      <div class="productivity-wrap" aria-labelledby="productivity-heading">
+        <h3 id="productivity-heading">Class Productivity</h3>
+        <div
+          id="productivityBar"
+          class="sub-meter productivity-meter"
+          role="progressbar"
+          aria-label="Class productivity progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="productivityFill" class="sub-meter-fill quiet" style="width: 0%;"></div>
+        </div>
+        <p class="sub-meter-value">Progress: <strong id="productivityValue" aria-live="polite">0%</strong></p>
       </div>
 
       <p class="helper">CSV includes only timestamp + session total (no audio data).</p>

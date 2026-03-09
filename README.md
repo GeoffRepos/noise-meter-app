@@ -14,6 +14,8 @@ The app only stores teacher preferences in `localStorage`:
 
 - Threshold
 - Sensitivity
+- Slow creep grace time
+- Productivity fill/drain pace
 - Positive reinforcement toggle
 - Quiet streak seconds
 
@@ -23,9 +25,13 @@ No raw audio buffers or time-series history are stored.
 
 - Start/Stop microphone analysis
 - Live 0–100 noise meter (green / amber / red)
+- Noise detector (status ranges from Good to Detention imminent; requires sustained loudness before detention time starts)
 - Threshold + sensitivity controls
+- Teacher-facing tuning controls for slow creep and productivity pace
+- One-click presets: Strict, Balanced, Forgiving (manual edits switch to Custom)
 - 2.5-second calibration helper with suggested threshold
-- Detention tally timer (increments while above threshold)
+- Detention tally timer (increments while above threshold after slow creep detector arms)
+- Background productivity bar (fills during quiet time, drains during loud periods)
 - Optional positive reinforcement deduction while quiet
 - Reset tally
 - CSV export of session summary only (timestamp + total)
