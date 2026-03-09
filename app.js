@@ -88,7 +88,8 @@ const ui = {
   productivityValue: document.getElementById("productivityValue"),
   resetTally: document.getElementById("resetTally"),
   exportCsv: document.getElementById("exportCsv"),
-  statusMessage: document.getElementById("statusMessage")
+  statusMessage: document.getElementById("statusMessage"),
+  yearValue: document.getElementById("yearValue")
 };
 
 const state = {
@@ -167,6 +168,14 @@ function formatSecondsAsMMSS(totalSeconds) {
 function setStatus(text, type = "info") {
   ui.statusMessage.textContent = text;
   ui.statusMessage.className = `status ${type}`;
+}
+
+function renderBrandYear() {
+  if (!ui.yearValue) {
+    return;
+  }
+
+  ui.yearValue.textContent = String(new Date().getFullYear());
 }
 
 function loadSettings() {
@@ -796,6 +805,7 @@ function init() {
   const settings = loadSettings();
   applySettingsToUI(settings);
   setPresenterMode(settings.presenterMode, false);
+  renderBrandYear();
   renderMeter(0);
   renderSlowCreep(0);
   renderProductivity(0);

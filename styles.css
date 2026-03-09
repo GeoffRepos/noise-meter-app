@@ -350,7 +350,6 @@ input:focus-visible {
 }
 
 body.presenter-mode .app-header,
-body.presenter-mode .app-footer,
 body.presenter-mode .controls-card,
 body.presenter-mode .meter-card .notice {
   display: none;
@@ -381,6 +380,11 @@ body.presenter-mode .app-main {
   max-width: 900px;
   grid-template-columns: 1fr;
   padding-top: 1.2rem;
+}
+
+body.presenter-mode .app-footer {
+  padding-top: 0.35rem;
+  padding-bottom: 0.9rem;
 }
 
 body.presenter-mode .meter {
